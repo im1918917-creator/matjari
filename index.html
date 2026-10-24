@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>متجري | Matjari</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f7fb;
+      color: #172033;
+    }
+
+    header {
+      background: #173b72;
+      color: white;
+      padding: 24px 18px;
+      border-radius: 0 0 22px 22px;
+    }
+
+    header h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    header p {
+      margin: 0;
+      color: #d9e6ff;
+    }
+
+    main {
+      padding: 18px;
+      max-width: 900px;
+      margin: auto;
+    }
+
+    .welcome {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 18px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      background: white;
+      padding: 18px 12px;
+      border-radius: 16px;
+      box-shadow: 0 3px 12px #152b4a0c;
+    }
+
+    .icon {
+      font-size: 28px;
+    }
+
+    .card h3 {
+      font-size: 15px;
+      margin: 10px 0;
+    }
+
+    .value {
+      color: #173b72;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .section {
+      margin-top: 22px;
+      background: white;
+      padding: 18px;
+      border-radius: 16px;
+    }
+
+    button {
+      background: #173b72;
+      color: white;
+      border: none;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 15px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    button:active {
+      opacity: .8;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 7px 0;
+      border: 1px solid #d9e1ed;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+
+    .item {
+      border-bottom: 1px solid #edf0f5;
+      padding: 12px 0;
+      overflow-wrap: anywhere;
+    }
+
+    .note {
+      color: #69758a;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    @media (min-width: 600px) {
+      .grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🛍️ متجري</h1>
+    <p>Matjari — إدارة متجرك بسهولة</p>
+  </header>
+
+  <main>
+    <div class="welcome">أهلاً بيك في متجرك ❤️</div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="icon">📦</div>
+        <h3>المنتجات</h3>
+        <div class="value" id="productCount">0</div>
+      </div>
+
+      <div class="card">
+        <div class="icon">💰</div>
+        <h3>المبيعات</h3>
+        <div class="value" id="salesTotal">0 ج.س</div>
+      </div>
+
+      <div class="card">
+        <div class="icon">📊</div>
+        <h3>المصروفات</h3>
+        <div class="value" id="expensesTotal">0 ج.س</div>
+      </div>
+
+      <div class="card">
+        <div class="icon">💵</div>
+        <h3>صافي الربح</h3>
+        <div class="value" id="profitTotal">0 ج.س</div>
+      </div>
+    </div>
+
+    <section class="section">
+      <h2>➕ إضافة منتج</h2>
+      <input id="productName" placeholder="اسم المنتج">
+      <input id="productPrice" type="number" min="0" placeholder="سعر البيع بالجنيه السوداني">
+      <input id="productQuantity" type="number" min="0" placeholder="الكمية المتوفرة">
+      <button onclick="addProduct()">حفظ المنتج</button>
+      <div id="productList"></div>
+    </section>
+
+    <section class="section">
+      <h2>🧾 تسجيل عملية بيع</h2>
+      <input id="saleAmount" type="number" min="0" placeholder="قيمة البيع بالجنيه السوداني">
+      <button onclick="addSale()">تسجيل البيع</button>
+    </section>
+
+    <section class="section">
+      <h2>🧮 تسجيل مصروف</h2>
+      <input id="expenseAmount" type="number" min="0" placeholder="قيمة المصروف بالجنيه السوداني">
+      <button onclick="addExpense()">تسجيل المصروف</button>
+    </section>
+
+    <section class="section">
+      <h2>⚠️ تنبيهات المخزون</h2>
+      <p id="stockAlerts">ما عندك منتجات حالياً.</p>
+      <p class="note">تنبيه المخزون المنخفض يظهر عندما تصل الكمية إلى 5 أو أقل.</p>
+    </section>
+
+    <p class="note">نسخة تجريبية أولية. البيانات محفوظة على هذا الجهاز فقط، وليست مرتبطة بقاعدة بيانات سحابية بعد.</p>
+  </main>
+
+  <script>
+    let products = [];
+    let sales = 0;
+    let expenses = 0;
+
+    const money = value =>
+      value.toLocaleString("ar", { maximumFractionDigits: 2 }) + " ج.س";
+
+    function updateDashboard() {
+      document.getElementById("productCount").textContent = products.length;
+      document.getElementById("salesTotal").textContent = money(sales);
+      document.getElementById("expensesTotal").textContent = money(expenses);
+      document.getElementById("profitTotal").textContent = money(sales - expenses);
+
+      const alerts = products.filter(product => product.quantity <= 5);
+
+      document.getElementById("stockAlerts").textContent = alerts.length
+        ? alerts.map(product =>
+            product.name + ": متبقي " + product.quantity
+          ).join("، ")
+        : "المخزون جيد حالياً.";
+    }
+
+    function addProduct() {
+      const name = document.getElementById("productName").value.trim();
+      const price = Number(document.getElementById("productPrice").value);
+      const quantity = Number(document.getElementById("productQuantity").value);
+
+      if (!name ||
+          document.getElementById("productPrice").value === "" ||
+          document.getElementById("productQuantity").value === "" ||
+          !Number.isFinite(price) || price < 0 ||
+          !Number.isInteger(quantity) || quantity < 0) {
+        alert("أدخل اسم المنتج وسعراً وكمية صحيحة.");
+        return;
+      }
+
+      products.push({ name, price, quantity });
+
+      document.getElementById("productList").innerHTML = products.map(product =>
+        '<div class="item">' +
+        '<strong>' + escapeHTML(product.name) + '</strong><br>' +
+        'السعر: ' + money(product.price) +
+        ' | الكمية: ' + product.quantity +
+        '</div>'
+      ).join("");
+
+      document.getElementById("productName").value = "";
+      document.getElementById("productPrice").value = "";
+      document.getElementById("productQuantity").value = "";
+
+      updateDashboard();
+    }
+
+    function escapeHTML(value) {
+      return value.replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[character]);
+    }
+
+    function addSale() {
+      const input = document.getElementById("saleAmount");
+      const amount = Number(input.value);
+
+      if (input.value === "" || !Number.isFinite(amount) || amount <= 0) {
+        alert("أدخل قيمة بيع صحيحة أكبر من صفر.");
+        return;
+      }
+
+      sales += amount;
+      input.value = "";
+      updateDashboard();
+      alert("تم تسجيل البيع بنجاح.");
+    }
+
+    function addExpense() {
+      const input = document.getElementById("expenseAmount");
+      const amount = Number(input.value);
+
+      if (input.value === "" || !Number.isFinite(amount) || amount <= 0) {
+        alert("أدخل قيمة مصروف صحيحة أكبر من صفر.");
+        return;
+      }
+
+      expenses += amount;
+      input.value = "";
+      updateDashboard();
+      alert("تم تسجيل المصروف بنجاح.");
+    }
+
+    updateDashboard();
+  </script>
+</body>
+  </html>
